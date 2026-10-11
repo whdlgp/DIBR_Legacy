@@ -118,6 +118,88 @@ def world2pixel_inverse(world_coord, ref_image, camera):
     return im_inverse
 
 
+def pixel2world_erp(depth):
+    height, width = depth.shape
+
+    u = (np.arange(width) + 0.5) / width
+    v = (np.arange(height) + 0.5) / height
+    lon, lat = np.meshgrid((u - 0.5) * 2 * np.pi, (0.5 - v) * np.pi)
+
+    world_coord = np.empty((3, height * width), dtype=depth.dtype)
+    world_coord[0] = (np.cos(lat) * np.sin(lon) * depth).reshape(-1)
+    world_coord[1] = (np.sin(lat) * depth).reshape(-1)
+    world_coord[2] = (np.cos(lat) * np.cos(lon) * depth).reshape(-1)
+
+    return world_coord
+
+
+def world2pixel_forward_erp(world_coord, ref_image, return_mode="both"):
+    height, width = ref_image.shape[:2]
+
+    radius = np.linalg.norm(world_coord, axis=0)
+    valid = np.isfinite(radius) & (radius > 0)
+
+    src_idx = np.flatnonzero(valid)
+    world_coord = world_coord[:, valid]
+    depth = radius[valid]
+
+    lon = np.arctan2(world_coord[0], world_coord[2])
+    lat = np.arcsin(np.clip(world_coord[1] / depth, -1, 1))
+
+    x = np.round((lon / (2 * np.pi) + 0.5) * width - 0.5).astype(np.int32) % width
+    y = np.clip(np.round((0.5 - lat / np.pi) * height - 0.5).astype(np.int32), 0, height - 1)
+
+    order = np.argsort(depth)
+
+    x = x[order]
+    y = y[order]
+    depth = depth[order]
+    src_idx = src_idx[order]
+
+    target_idx = y * width + x
+    _, first = np.unique(target_idx, return_index=True)
+
+    x = x[first]
+    y = y[first]
+    depth = depth[first]
+    src_idx = src_idx[first]
+
+    im_another_point = None
+    depth_another_point = None
+
+    if return_mode != "depth":
+        im_another_point = np.zeros_like(ref_image)
+        im_another_point[y, x] = ref_image.reshape(-1, ref_image.shape[2])[src_idx]
+
+    if return_mode != "image":
+        depth_another_point = np.zeros((height, width), dtype=np.float32)
+        depth_another_point[y, x] = depth
+
+    return im_another_point, depth_another_point
+
+
+def world2pixel_inverse_erp(world_coord, ref_image):
+    height, width = ref_image.shape[:2]
+
+    radius = np.linalg.norm(world_coord, axis=0)
+    valid = np.isfinite(radius) & (radius > 0)
+
+    idx = np.flatnonzero(valid)
+    world_coord = world_coord[:, valid]
+    radius = radius[valid]
+
+    lon = np.arctan2(world_coord[0], world_coord[2])
+    lat = np.arcsin(np.clip(world_coord[1] / radius, -1, 1))
+
+    x = np.round((lon / (2 * np.pi) + 0.5) * width - 0.5).astype(np.int32) % width
+    y = np.clip(np.round((0.5 - lat / np.pi) * height - 0.5).astype(np.int32), 0, height - 1)
+
+    im_inverse = np.zeros_like(ref_image)
+    im_inverse.reshape(-1, ref_image.shape[2])[idx] = ref_image[y, x]
+
+    return im_inverse
+
+
 def make_rt(theta_x, theta_y, theta_z, tx, ty, tz):
     rot_x = np.array([
         [1, 0              ,  0              ],
@@ -197,6 +279,43 @@ def inverse_mapping(depth, image, camera_src, camera_dst, R, t, verbose=False):
 
     verbose and print("Inverse mapping")
     image_inverse = world2pixel_inverse(world_coord, image, camera_src)
+
+    verbose and print("Done.")
+
+    return image_inverse, depth_filt
+
+
+def forward_mapping_erp(depth, image, R, t, return_mode="both", verbose=False):
+    verbose and print("Source image → 3D World coordinates")
+    world_coord = pixel2world_erp(depth)
+    world_coord[:, depth.reshape(-1) <= 0] = np.nan
+
+    verbose and print("Apply R|t")
+    world_coord = apply_rt(world_coord, R, t)
+
+    verbose and print("Forward mapping")
+    image_warped, depth_warped = world2pixel_forward_erp(world_coord, image, return_mode=return_mode)
+
+    verbose and print("Done.")
+
+    return image_warped, depth_warped
+
+
+def inverse_mapping_erp(depth, image, R, t, verbose=False):
+    _, depth_warped = forward_mapping_erp(depth, image, R, t, "depth", verbose)
+
+    verbose and print("Morph filtering")
+    depth_filt = filter_depth(depth_warped, "morph")
+
+    verbose and print("Reproject depth to 3D World coordinates")
+    world_coord = pixel2world_erp(depth_filt)
+    world_coord[:, depth_filt.reshape(-1) <= 0] = np.nan
+
+    verbose and print("Apply reverse R|t")
+    world_coord = apply_rt_inverse(world_coord, R, t)
+
+    verbose and print("Inverse mapping")
+    image_inverse = world2pixel_inverse_erp(world_coord, image)
 
     verbose and print("Done.")
 

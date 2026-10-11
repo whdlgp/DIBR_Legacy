@@ -32,6 +32,7 @@ output/
 
 # Local datasets
 middlebury2014/
+dummy_panorama/
 
 # OS
 .DS_Store
