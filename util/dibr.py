@@ -127,7 +127,7 @@ def pixel2world_erp(depth):
 
     world_coord = np.empty((3, height * width), dtype=depth.dtype)
     world_coord[0] = (np.cos(lat) * np.sin(lon) * depth).reshape(-1)
-    world_coord[1] = (np.sin(lat) * depth).reshape(-1)
+    world_coord[1] = (-np.sin(lat) * depth).reshape(-1)
     world_coord[2] = (np.cos(lat) * np.cos(lon) * depth).reshape(-1)
 
     return world_coord
@@ -144,7 +144,7 @@ def world2pixel_forward_erp(world_coord, ref_image, return_mode="both"):
     depth = radius[valid]
 
     lon = np.arctan2(world_coord[0], world_coord[2])
-    lat = np.arcsin(np.clip(world_coord[1] / depth, -1, 1))
+    lat = np.arcsin(np.clip(-world_coord[1] / depth, -1, 1))
 
     x = np.round((lon / (2 * np.pi) + 0.5) * width - 0.5).astype(np.int32) % width
     y = np.clip(np.round((0.5 - lat / np.pi) * height - 0.5).astype(np.int32), 0, height - 1)
@@ -189,7 +189,7 @@ def world2pixel_inverse_erp(world_coord, ref_image):
     radius = radius[valid]
 
     lon = np.arctan2(world_coord[0], world_coord[2])
-    lat = np.arcsin(np.clip(world_coord[1] / radius, -1, 1))
+    lat = np.arcsin(np.clip(-world_coord[1] / radius, -1, 1))
 
     x = np.round((lon / (2 * np.pi) + 0.5) * width - 0.5).astype(np.int32) % width
     y = np.clip(np.round((0.5 - lat / np.pi) * height - 0.5).astype(np.int32), 0, height - 1)
