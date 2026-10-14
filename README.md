@@ -6,6 +6,8 @@ My original MATLAB implementation: [matlab_dibr_test](https://github.com/whdlgp/
 
 ## Dataset
 
+### Plane image (Perspective projection)
+
 Download the Middlebury Stereo 2014 dataset from the [official website](https://vision.middlebury.edu/stereo/data/scenes2014/).
 
 Place the downloaded files in the following directory structure:
@@ -29,6 +31,23 @@ middlebury2014/
 Dataset reference:  
 Scharstein et al., *High-resolution stereo datasets with subpixel-accurate ground truth*, GCPR 2014.
 
+### Spherical image (ERP, Equirectangular projection)
+
+Most ERP datasets with depth GT require license agreements and access requests.  
+I understand why they ask for it, but it's too much work just to get a simple test input.  
+So I built my own test input generator.
+
+```bash
+uv run python -m dummy_panorama_tool.dummy_panorama_creater
+```
+
+<details>
+<summary>Dummy Panorama image example</summary>
+
+![spherical_dibr](demo_output/spherical_dibr/room_rgb.png)
+
+</details>
+
 ## Setup
 
 This project uses [uv](https://docs.astral.sh/uv/).
@@ -51,6 +70,12 @@ Stereo-camera midpoint rendering demo:
 uv run demo_stereo_camera.py
 ```
 
+Spherical(ERP, Equirectangular projection) to Plane viewpoint rendering demo:
+
+```bash
+uv run demo_erp2plane.py
+```
+
 ## Result
 
 Animated WebP demos.
@@ -70,6 +95,13 @@ Animated WebP demos.
 ![Bicycle1](demo_output/Bicycle1/stereo_camera_dibr.webp)
 
 ![Playroom](demo_output/Playroom/stereo_camera_dibr.webp)
+
+</details>
+
+<details>
+<summary>Spherical(ERP, Equirectangular projection) to Plane viewpoint rendering</summary>
+
+![spherical_dibr](demo_output/spherical_dibr/erp_camera_walk.webp)
 
 </details>
 
