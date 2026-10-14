@@ -4,6 +4,9 @@ A Python reimplementation of my legacy MATLAB DIBR (Depth Image-Based Rendering)
 
 My original MATLAB implementation: [matlab_dibr_test](https://github.com/whdlgp/matlab_dibr_test)
 
+![preview_plane_DIBR](demo_output/preview/stereo_camera_dibr.webp)
+![preview_spherical_DIBR](demo_output/preview/erp_camera_walk.webp)
+
 ## Dataset
 
 ### Plane image (Perspective projection)
