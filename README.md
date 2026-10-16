@@ -11,6 +11,12 @@ My original MATLAB implementation: [matlab_dibr_test](https://github.com/whdlgp/
 
 ### Plane image (Perspective projection)
 
+Run Download script.  
+```bash
+uv run download_middlebury.py
+```
+or
+
 Download the Middlebury Stereo 2014 dataset from the [official website](https://vision.middlebury.edu/stereo/data/scenes2014/).
 
 Place the downloaded files in the following directory structure:
