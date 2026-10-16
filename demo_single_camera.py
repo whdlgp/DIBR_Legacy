@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from util.dibr import inverse_mapping, make_rt
+from dibr import inverse_mapping, make_rt
 from util.stereo_reader import StereoReader
 from util.visualizer import AnimationVisualizer
 

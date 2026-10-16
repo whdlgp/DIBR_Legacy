@@ -1,7 +1,7 @@
 from pathlib import Path
 import numpy as np
 
-from util.dibr import make_rt, inverse_mapping_erp2plane
+from dibr import make_rt, inverse_mapping_erp2plane
 from util.visualizer import ERPAnimationVisualizer
 from dummy_panorama_tool.dummy_panorama_reader import DummyPanoramaReader
 

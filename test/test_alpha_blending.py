@@ -1,7 +1,7 @@
 import numpy as np
 from pathlib import Path
 from util.stereo_reader import StereoReader
-from util.dibr import make_rt, inverse_mapping, alpha_blending
+from dibr import make_rt, inverse_mapping, alpha_blending
 from util.show import show
 
 if __name__ == "__main__":

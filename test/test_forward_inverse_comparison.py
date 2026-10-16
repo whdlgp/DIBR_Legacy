@@ -1,7 +1,7 @@
 import numpy as np
 from pathlib import Path
 from util.stereo_reader import StereoReader
-from util.dibr import make_rt, forward_mapping, inverse_mapping, show_mapping_comparison
+from dibr import make_rt, forward_mapping, inverse_mapping, show_mapping_comparison
 
 
 if __name__ == "__main__":
