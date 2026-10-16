@@ -4,6 +4,17 @@ from typing import Literal
 from util.show import depth_to_show, show
 
 
+def zbuffer_keep_nearest(x, y, depth, src_idx, height, width):
+    target_idx = y.astype(np.int64) * width + x
+
+    zbuf = np.full(height * width, np.inf, dtype=depth.dtype)
+    np.minimum.at(zbuf, target_idx, depth)
+
+    winner = depth == zbuf[target_idx]
+
+    return x[winner], y[winner], depth[winner], src_idx[winner]
+
+
 def pixel2world(depth, camera):
     height, width = depth.shape
 
@@ -57,20 +68,7 @@ def world2pixel_forward(world_coord, ref_image, camera, return_mode: Literal["im
     depth = depth[valid]
     src_idx = src_idx[valid]
 
-    order = np.argsort(depth)
-
-    x = x[order]
-    y = y[order]
-    depth = depth[order]
-    src_idx = src_idx[order]
-
-    target_idx = y * width + x
-    _, first = np.unique(target_idx, return_index=True)
-
-    x = x[first]
-    y = y[first]
-    depth = depth[first]
-    src_idx = src_idx[first]
+    x, y, depth, src_idx = zbuffer_keep_nearest(x, y, depth, src_idx, height, width)
 
     im_another_point = None
     depth_another_point = None
@@ -149,20 +147,7 @@ def world2pixel_forward_erp(world_coord, ref_image, return_mode="both"):
     x = np.round((lon / (2 * np.pi) + 0.5) * width - 0.5).astype(np.int32) % width
     y = np.clip(np.round((0.5 - lat / np.pi) * height - 0.5).astype(np.int32), 0, height - 1)
 
-    order = np.argsort(depth)
-
-    x = x[order]
-    y = y[order]
-    depth = depth[order]
-    src_idx = src_idx[order]
-
-    target_idx = y * width + x
-    _, first = np.unique(target_idx, return_index=True)
-
-    x = x[first]
-    y = y[first]
-    depth = depth[first]
-    src_idx = src_idx[first]
+    x, y, depth, src_idx = zbuffer_keep_nearest(x, y, depth, src_idx, height, width)
 
     im_another_point = None
     depth_another_point = None
@@ -224,20 +209,7 @@ def world2pixel_forward_erp2plane(world_coord, ref_image, camera, camera_dst_siz
     depth = depth[valid]
     src_idx = src_idx[valid]
 
-    order = np.argsort(depth)
-
-    x = x[order]
-    y = y[order]
-    depth = depth[order]
-    src_idx = src_idx[order]
-
-    target_idx = y * width + x
-    _, first = np.unique(target_idx, return_index=True)
-
-    x = x[first]
-    y = y[first]
-    depth = depth[first]
-    src_idx = src_idx[first]
+    x, y, depth, src_idx = zbuffer_keep_nearest(x, y, depth, src_idx, height, width)
 
     im_another_point = None
     depth_another_point = None
