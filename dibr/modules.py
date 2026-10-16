@@ -1,9 +1,8 @@
 import numpy as np
 from typing import Literal
 
-from .blocks import check_valid_coord, check_valid_radius
 from .blocks import unproject_plane, project_plane, unproject_erp, project_erp
-from .blocks import select_coord, select_valid_pixel, zbuffer_keep_nearest
+from .blocks import zbuffer_keep_nearest
 from .blocks import write_image, write_depth, sample_image
 
 
@@ -46,10 +45,7 @@ def world2pixel_forward(world_coord: np.ndarray, ref_image: np.ndarray, camera: 
     """
     height, width = ref_image.shape[:2]
 
-    valid = check_valid_coord(world_coord, 1e-6)
-    src_idx, world_coord = select_coord(world_coord, valid)
-    x, y, depth = project_plane(world_coord, camera)
-    x, y, depth, src_idx = select_valid_pixel(x, y, height, width, depth, src_idx)
+    src_idx, x, y, depth = project_plane(world_coord, camera, height, width, 1e-6)
     x, y, depth, src_idx = zbuffer_keep_nearest(x, y, depth, src_idx, height, width)
 
     image = None
@@ -76,10 +72,7 @@ def world2pixel_inverse(world_coord: np.ndarray, ref_image: np.ndarray, camera: 
     """
     height, width = ref_image.shape[:2]
 
-    valid = check_valid_coord(world_coord, 0)
-    idx, world_coord = select_coord(world_coord, valid)
-    x, y, _ = project_plane(world_coord, camera)
-    x, y, idx = select_valid_pixel(x, y, height, width, idx)
+    idx, x, y, _ = project_plane(world_coord, camera, height, width, 0)
 
     return sample_image(ref_image, x, y, idx, height, width)
 
@@ -97,10 +90,7 @@ def world2pixel_forward_erp(world_coord: np.ndarray, ref_image: np.ndarray, retu
     """
     height, width = ref_image.shape[:2]
 
-    valid = check_valid_radius(world_coord)
-    src_idx, world_coord = select_coord(world_coord, valid)
-    x, y, depth = project_erp(world_coord, height, width)
-    x, y, depth, src_idx = select_valid_pixel(x, y, height, width, depth, src_idx)
+    src_idx, x, y, depth = project_erp(world_coord, height, width)
     x, y, depth, src_idx = zbuffer_keep_nearest(x, y, depth, src_idx, height, width)
 
     image = None
@@ -126,10 +116,7 @@ def world2pixel_inverse_erp(world_coord: np.ndarray, ref_image: np.ndarray) -> n
     """
     height, width = ref_image.shape[:2]
 
-    valid = check_valid_radius(world_coord)
-    idx, world_coord = select_coord(world_coord, valid)
-    x, y, _ = project_erp(world_coord, height, width)
-    x, y, idx = select_valid_pixel(x, y, height, width, idx)
+    idx, x, y, _ = project_erp(world_coord, height, width)
 
     return sample_image(ref_image, x, y, idx, height, width)
 
@@ -149,10 +136,7 @@ def world2pixel_forward_erp2plane(world_coord: np.ndarray, ref_image: np.ndarray
     """
     width, height = camera_dst_size
 
-    valid = check_valid_coord(world_coord, 1e-6)
-    src_idx, world_coord = select_coord(world_coord, valid)
-    x, y, depth = project_plane(world_coord, camera)
-    x, y, depth, src_idx = select_valid_pixel(x, y, height, width, depth, src_idx)
+    src_idx, x, y, depth = project_plane(world_coord, camera, height, width, 1e-6)
     x, y, depth, src_idx = zbuffer_keep_nearest(x, y, depth, src_idx, height, width)
 
     image = None
@@ -180,9 +164,6 @@ def world2pixel_inverse_erp2plane(world_coord: np.ndarray, ref_image: np.ndarray
     width, height = camera_dst_size
     src_height, src_width = ref_image.shape[:2]
 
-    valid = check_valid_radius(world_coord)
-    idx, world_coord = select_coord(world_coord, valid)
-    x, y, _ = project_erp(world_coord, src_height, src_width)
-    x, y, idx = select_valid_pixel(x, y, src_height, src_width, idx)
+    idx, x, y, _ = project_erp(world_coord, src_height, src_width)
 
     return sample_image(ref_image, x, y, idx, height, width)

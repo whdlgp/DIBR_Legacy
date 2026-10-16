@@ -27,48 +27,6 @@ def zbuffer_keep_nearest(x: np.ndarray, y: np.ndarray, depth: np.ndarray, src_id
     return x[winner], y[winner], depth[winner], src_idx[winner]
 
 
-def check_valid_coord(world_coord: np.ndarray, min_depth: float) -> np.ndarray:
-    """Check which 3D coordinates are finite and deeper than min_depth.
-
-    Args:
-        world_coord: 3D coordinates, shape (3, N).
-        min_depth: lower bound of z (exclusive).
-
-    Returns:
-        Boolean mask, shape (N,).
-    """
-    return np.isfinite(world_coord).all(axis=0) & (world_coord[2] > min_depth)
-
-
-def check_valid_radius(world_coord: np.ndarray) -> np.ndarray:
-    """Check which 3D coordinates have a finite, positive radius.
-
-    Args:
-        world_coord: 3D coordinates, shape (3, N).
-
-    Returns:
-        Boolean mask, shape (N,).
-    """
-    radius = np.linalg.norm(world_coord, axis=0)
-
-    return np.isfinite(radius) & (radius > 0)
-
-
-def check_valid_pixel(x: np.ndarray, y: np.ndarray, height: int, width: int) -> np.ndarray:
-    """Check which pixel coordinates are inside the image.
-
-    Args:
-        x: pixel x coordinates.
-        y: pixel y coordinates.
-        height: image height.
-        width: image width.
-
-    Returns:
-        Boolean mask, shape (N,).
-    """
-    return (x >= 0) & (x < width) & (y >= 0) & (y < height)
-
-
 def unproject_plane(depth: np.ndarray, camera: np.ndarray) -> np.ndarray:
     """Plane image pixels → 3D coordinates.
 
@@ -119,29 +77,48 @@ def unproject_erp(depth: np.ndarray) -> np.ndarray:
     return world_coord
 
 
-def project_plane(world_coord: np.ndarray, camera: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def project_plane(world_coord: np.ndarray, camera: np.ndarray, height: int, width: int, min_depth: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """3D coordinates → plane (pinhole) pixel coordinates.
+
+    Points that are non-finite, not deeper than min_depth, or projected
+    outside the image are dropped.
 
     Args:
         world_coord: 3D coordinates, shape (3, N).
         camera: camera intrinsic matrix, shape (3, 3).
+        height: dst image height.
+        width: dst image width.
+        min_depth: lower bound of z (exclusive).
 
     Returns:
-        x, y (rounded pixel coordinates) and depth (z).
+        valid_idx: flat indices of the surviving points in the N input points, shape (M,).
+        x: pixel x coordinates (int32), shape (M,).
+        y: pixel y coordinates (int32), shape (M,).
+        depth: depth (z) of each point, shape (M,).
     """
     fx = camera[0, 0]
     fy = camera[1, 1]
     ox = camera[0, 2]
     oy = camera[1, 2]
 
-    x = np.round(world_coord[0] * fx / world_coord[2] + ox)
-    y = np.round(world_coord[1] * fy / world_coord[2] + oy)
+    valid = np.isfinite(world_coord).all(axis=0) & (world_coord[2] > min_depth)
+    valid_idx = np.flatnonzero(valid)
+    world_coord = world_coord[:, valid_idx]
 
-    return x, y, world_coord[2]
+    depth = world_coord[2]
+    x = np.round(world_coord[0] * fx / depth + ox)
+    y = np.round(world_coord[1] * fy / depth + oy)
+
+    inside = (x >= 0) & (x < width) & (y >= 0) & (y < height)
+
+    return valid_idx[inside], x[inside].astype(np.int32), y[inside].astype(np.int32), depth[inside]
 
 
-def project_erp(world_coord: np.ndarray, height: int, width: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def project_erp(world_coord: np.ndarray, height: int, width: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """3D coordinates → ERP pixel coordinates.
+
+    Points with a non-finite or zero radius are dropped. x is wrapped and
+    y is clipped, so every remaining point lands inside the image.
 
     Args:
         world_coord: 3D coordinates, shape (3, N).
@@ -149,9 +126,17 @@ def project_erp(world_coord: np.ndarray, height: int, width: int) -> tuple[np.nd
         width: ERP image width.
 
     Returns:
-        x (wrapped), y (clipped) pixel coordinates and depth (radius).
+        valid_idx: flat indices of the surviving points in the N input points, shape (M,).
+        x: pixel x coordinates (wrapped, int32), shape (M,).
+        y: pixel y coordinates (clipped, int32), shape (M,).
+        depth: depth (radius) of each point, shape (M,).
     """
     radius = np.linalg.norm(world_coord, axis=0)
+
+    valid = np.isfinite(radius) & (radius > 0)
+    valid_idx = np.flatnonzero(valid)
+    world_coord = world_coord[:, valid_idx]
+    radius = radius[valid_idx]
 
     lon = np.arctan2(world_coord[0], world_coord[2])
     lat = np.arcsin(np.clip(-world_coord[1] / radius, -1, 1))
@@ -159,38 +144,7 @@ def project_erp(world_coord: np.ndarray, height: int, width: int) -> tuple[np.nd
     x = np.round((lon / (2 * np.pi) + 0.5) * width - 0.5).astype(np.int32) % width
     y = np.clip(np.round((0.5 - lat / np.pi) * height - 0.5).astype(np.int32), 0, height - 1)
 
-    return x, y, radius
-
-
-def select_coord(world_coord: np.ndarray, valid: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Select 3D coordinates by a validity mask.
-
-    Args:
-        world_coord: 3D coordinates, shape (3, N).
-        valid: boolean mask, shape (N,).
-
-    Returns:
-        Flat indices of the selected coordinates and the selected coordinates.
-    """
-    return np.flatnonzero(valid), world_coord[:, valid]
-
-
-def select_valid_pixel(x: np.ndarray, y: np.ndarray, height: int, width: int, *arrays: np.ndarray) -> tuple[np.ndarray, ...]:
-    """Select points whose pixel coordinates are inside the image.
-
-    Args:
-        x: pixel x coordinates.
-        y: pixel y coordinates.
-        height: image height.
-        width: image width.
-        *arrays: additional per-point arrays to select together.
-
-    Returns:
-        x, y (int32) and the selected additional arrays.
-    """
-    valid = check_valid_pixel(x, y, height, width)
-
-    return (x[valid].astype(np.int32), y[valid].astype(np.int32), *[a[valid] for a in arrays])
+    return valid_idx, x, y, radius
 
 
 def write_image(ref_image: np.ndarray, x: np.ndarray, y: np.ndarray, src_idx: np.ndarray, height: int, width: int) -> np.ndarray:
