@@ -93,7 +93,6 @@ def forward_mapping_erp(depth: np.ndarray, image: np.ndarray, R: np.ndarray, t: 
     """
     verbose and print("Source image → 3D World coordinates")
     world_coord = pixel2world_erp(depth)
-    world_coord[:, depth.reshape(-1) <= 0] = np.nan
 
     verbose and print("Apply R|t")
     world_coord = apply_rt(world_coord, R, t)
@@ -126,7 +125,6 @@ def inverse_mapping_erp(depth: np.ndarray, image: np.ndarray, R: np.ndarray, t: 
 
     verbose and print("Reproject depth to 3D World coordinates")
     world_coord = pixel2world_erp(depth_filt)
-    world_coord[:, depth_filt.reshape(-1) <= 0] = np.nan
 
     verbose and print("Apply reverse R|t")
     world_coord = apply_rt_inverse(world_coord, R, t)
@@ -158,7 +156,6 @@ def forward_mapping_erp2plane(depth: np.ndarray, image: np.ndarray, camera_dst: 
     """
     verbose and print("Source image → 3D World coordinates")
     world_coord = pixel2world_erp(depth)
-    world_coord[:, depth.reshape(-1) <= 0] = np.nan
 
     verbose and print("Apply R|t")
     world_coord = apply_rt(world_coord, R, t)
