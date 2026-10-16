@@ -2,7 +2,7 @@ import numpy as np
 from typing import Literal
 
 from .blocks import check_valid_coord, check_valid_radius
-from .blocks import project_plane, project_erp
+from .blocks import unproject_plane, project_plane, unproject_erp, project_erp
 from .blocks import select_coord, select_valid_pixel, zbuffer_keep_nearest
 from .blocks import write_image, write_depth, sample_image
 
@@ -17,21 +17,7 @@ def pixel2world(depth: np.ndarray, camera: np.ndarray) -> np.ndarray:
     Returns:
         3D coordinates, shape (3, H * W).
     """
-    height, width = depth.shape
-
-    fx = camera[0, 0]
-    fy = camera[1, 1]
-    ox = camera[0, 2]
-    oy = camera[1, 2]
-
-    x, y = np.meshgrid(np.arange(width), np.arange(height))
-
-    world_coord = np.empty((3, height * width), dtype=depth.dtype)
-    world_coord[0] = ((x - ox) * depth / fx).reshape(-1)
-    world_coord[1] = ((y - oy) * depth / fy).reshape(-1)
-    world_coord[2] = depth.reshape(-1)
-
-    return world_coord
+    return unproject_plane(depth, camera)
 
 
 def pixel2world_erp(depth: np.ndarray) -> np.ndarray:
@@ -43,18 +29,7 @@ def pixel2world_erp(depth: np.ndarray) -> np.ndarray:
     Returns:
         3D coordinates, shape (3, H * W).
     """
-    height, width = depth.shape
-
-    u = (np.arange(width) + 0.5) / width
-    v = (np.arange(height) + 0.5) / height
-    lon, lat = np.meshgrid((u - 0.5) * 2 * np.pi, (0.5 - v) * np.pi)
-
-    world_coord = np.empty((3, height * width), dtype=depth.dtype)
-    world_coord[0] = (np.cos(lat) * np.sin(lon) * depth).reshape(-1)
-    world_coord[1] = (-np.sin(lat) * depth).reshape(-1)
-    world_coord[2] = (np.cos(lat) * np.cos(lon) * depth).reshape(-1)
-
-    return world_coord
+    return unproject_erp(depth)
 
 
 def world2pixel_forward(world_coord: np.ndarray, ref_image: np.ndarray, camera: np.ndarray, return_mode: Literal["image", "depth", "both"] = "both") -> tuple[np.ndarray | None, np.ndarray | None]:

@@ -69,6 +69,56 @@ def check_valid_pixel(x: np.ndarray, y: np.ndarray, height: int, width: int) -> 
     return (x >= 0) & (x < width) & (y >= 0) & (y < height)
 
 
+def unproject_plane(depth: np.ndarray, camera: np.ndarray) -> np.ndarray:
+    """Plane image pixels → 3D coordinates.
+
+    Args:
+        depth: src depth map, shape (H, W).
+        camera: src camera intrinsic matrix, shape (3, 3).
+
+    Returns:
+        3D coordinates, shape (3, H * W).
+    """
+    height, width = depth.shape
+
+    fx = camera[0, 0]
+    fy = camera[1, 1]
+    ox = camera[0, 2]
+    oy = camera[1, 2]
+
+    x, y = np.meshgrid(np.arange(width), np.arange(height))
+
+    world_coord = np.empty((3, height * width), dtype=depth.dtype)
+    world_coord[0] = ((x - ox) * depth / fx).reshape(-1)
+    world_coord[1] = ((y - oy) * depth / fy).reshape(-1)
+    world_coord[2] = depth.reshape(-1)
+
+    return world_coord
+
+
+def unproject_erp(depth: np.ndarray) -> np.ndarray:
+    """ERP image pixels → 3D coordinates.
+
+    Args:
+        depth: src ERP depth map (radius), shape (H, W).
+
+    Returns:
+        3D coordinates, shape (3, H * W).
+    """
+    height, width = depth.shape
+
+    u = (np.arange(width) + 0.5) / width
+    v = (np.arange(height) + 0.5) / height
+    lon, lat = np.meshgrid((u - 0.5) * 2 * np.pi, (0.5 - v) * np.pi)
+
+    world_coord = np.empty((3, height * width), dtype=depth.dtype)
+    world_coord[0] = (np.cos(lat) * np.sin(lon) * depth).reshape(-1)
+    world_coord[1] = (-np.sin(lat) * depth).reshape(-1)
+    world_coord[2] = (np.cos(lat) * np.cos(lon) * depth).reshape(-1)
+
+    return world_coord
+
+
 def project_plane(world_coord: np.ndarray, camera: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """3D coordinates → plane (pinhole) pixel coordinates.
 
