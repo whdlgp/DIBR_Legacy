@@ -7,6 +7,17 @@ My original MATLAB implementation: [matlab_dibr_test](https://github.com/whdlgp/
 ![preview_plane_DIBR](demo_output/preview/stereo_camera_dibr.webp)
 ![preview_spherical_DIBR](demo_output/preview/erp_camera_walk.webp)
 
+## Table of Contents
+
+- [Dataset](#dataset)
+  - [Plane image (Perspective projection)](#plane-image-perspective-projection)
+  - [Spherical image (ERP, Equirectangular projection)](#spherical-image-erp-equirectangular-projection)
+- [Setup](#setup)
+- [Run](#run)
+- [Result](#result)
+- [Backend](#backend)
+- [License](#license)
+
 ## Dataset
 
 ### Plane image (Perspective projection)
