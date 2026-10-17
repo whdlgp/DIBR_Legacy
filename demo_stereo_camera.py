@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from dibr import inverse_mapping, make_rt, alpha_blending
+from dibr import inverse_mapping, make_rt, alpha_blending, set_device
 from util.stereo_reader import StereoReader
 from util.visualizer import AnimationVisualizer
 
@@ -19,6 +19,9 @@ if __name__ == "__main__":
     move_ratio = 0.2
     corner_power = 4.0
     webp_quality = 80
+
+    # Set device
+    set_device("auto")
 
     # Read input data and resize
     stereo = StereoReader(data_dir)

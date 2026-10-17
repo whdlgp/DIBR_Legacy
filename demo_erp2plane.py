@@ -1,7 +1,7 @@
 from pathlib import Path
 import numpy as np
 
-from dibr import make_rt, inverse_mapping_erp2plane
+from dibr import make_rt, inverse_mapping_erp2plane, set_device
 from util.visualizer import ERPAnimationVisualizer
 from dummy_panorama_tool.dummy_panorama_reader import DummyPanoramaReader
 
@@ -15,6 +15,9 @@ if __name__ == "__main__":
     fps = 20
     duration = 18
     move_distance = 1500.0
+
+    # Set device
+    set_device("numpy")
 
     # Read input data
     src = DummyPanoramaReader(data_dir)

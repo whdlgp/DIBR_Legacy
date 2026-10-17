@@ -3,7 +3,7 @@ import cv2
 from typing import Literal
 from util.show import depth_to_show, show
 
-from .blocks import apply_rt, apply_rt_inverse, filter_depth
+from .device import get_blocks
 from .modules import pixel2world, pixel2world_erp
 from .modules import world2pixel_forward, world2pixel_inverse
 from .modules import world2pixel_forward_erp, world2pixel_inverse_erp
@@ -27,11 +27,13 @@ def forward_mapping(depth: np.ndarray, image: np.ndarray, camera_src: np.ndarray
     Returns:
         dst image and depth map.
     """
+    bl = get_blocks()
+
     verbose and print("Source image → 3D World coordinates")
     world_coord = pixel2world(depth, camera_src)
 
     verbose and print("Apply R|t")
-    world_coord = apply_rt(world_coord, R, t)
+    world_coord = bl.apply_rt(world_coord, R, t)
 
     verbose and print("Forward mapping")
     image_warped, depth_warped = world2pixel_forward(world_coord, image, camera_dst, return_mode=return_mode)
@@ -56,17 +58,19 @@ def inverse_mapping(depth: np.ndarray, image: np.ndarray, camera_src: np.ndarray
     Returns:
         dst image and filtered dst depth map.
     """
+    bl = get_blocks()
+    
     # Do forward mapping
     _, depth_warped = forward_mapping(depth, image, camera_src, camera_dst, R, t, 'depth', verbose)
 
     verbose and print("Median filtering")
-    depth_filt = filter_depth(depth_warped, 'median')
+    depth_filt = bl.filter_depth(depth_warped, 'median')
 
     verbose and print("Reproject depth to 3D World coordinates")
     world_coord = pixel2world(depth_filt, camera_dst)
 
     verbose and print("Apply reverse R|t")
-    world_coord = apply_rt_inverse(world_coord, R, t)
+    world_coord = bl.apply_rt_inverse(world_coord, R, t)
 
     verbose and print("Inverse mapping")
     image_inverse = world2pixel_inverse(world_coord, image, camera_src)
@@ -91,11 +95,13 @@ def forward_mapping_erp(depth: np.ndarray, image: np.ndarray, R: np.ndarray, t: 
     Returns:
         dst ERP image and depth map.
     """
+    bl = get_blocks()
+    
     verbose and print("Source image → 3D World coordinates")
     world_coord = pixel2world_erp(depth)
 
     verbose and print("Apply R|t")
-    world_coord = apply_rt(world_coord, R, t)
+    world_coord = bl.apply_rt(world_coord, R, t)
 
     verbose and print("Forward mapping")
     image_warped, depth_warped = world2pixel_forward_erp(world_coord, image, return_mode=return_mode)
@@ -118,16 +124,18 @@ def inverse_mapping_erp(depth: np.ndarray, image: np.ndarray, R: np.ndarray, t: 
     Returns:
         dst ERP image and filtered dst depth map.
     """
+    bl = get_blocks()
+    
     _, depth_warped = forward_mapping_erp(depth, image, R, t, "depth", verbose)
 
     verbose and print("Morph filtering")
-    depth_filt = filter_depth(depth_warped, "morph")
+    depth_filt = bl.filter_depth(depth_warped, "morph")
 
     verbose and print("Reproject depth to 3D World coordinates")
     world_coord = pixel2world_erp(depth_filt)
 
     verbose and print("Apply reverse R|t")
-    world_coord = apply_rt_inverse(world_coord, R, t)
+    world_coord = bl.apply_rt_inverse(world_coord, R, t)
 
     verbose and print("Inverse mapping")
     image_inverse = world2pixel_inverse_erp(world_coord, image)
@@ -154,11 +162,13 @@ def forward_mapping_erp2plane(depth: np.ndarray, image: np.ndarray, camera_dst: 
     Returns:
         dst plane image and depth map.
     """
+    bl = get_blocks()
+    
     verbose and print("Source image → 3D World coordinates")
     world_coord = pixel2world_erp(depth)
 
     verbose and print("Apply R|t")
-    world_coord = apply_rt(world_coord, R, t)
+    world_coord = bl.apply_rt(world_coord, R, t)
 
     verbose and print("Forward mapping")
     image_warped, depth_warped = world2pixel_forward_erp2plane(world_coord, image, camera_dst, camera_dst_size, return_mode=return_mode)
@@ -183,17 +193,19 @@ def inverse_mapping_erp2plane(depth: np.ndarray, image: np.ndarray, camera_dst: 
     Returns:
         dst plane image and filtered dst depth map.
     """
+    bl = get_blocks()
+    
     verbose and print("Forward mapping")
     _, depth_warped = forward_mapping_erp2plane(depth, image, camera_dst, camera_dst_size, R, t, "depth")
 
     verbose and print("Filter depth")
-    depth_filt = filter_depth(depth_warped, "morph")
+    depth_filt = bl.filter_depth(depth_warped, "morph")
 
     verbose and print("Reproject depth to 3D World coordinates")
     world_coord = pixel2world(depth_filt, camera_dst)
 
     verbose and print("Apply reverse R|t")
-    world_coord = apply_rt_inverse(world_coord, R, t)
+    world_coord = bl.apply_rt_inverse(world_coord, R, t)
 
     verbose and print("Inverse mapping")
     image_inverse = world2pixel_inverse_erp2plane(world_coord, image, camera_dst_size)
