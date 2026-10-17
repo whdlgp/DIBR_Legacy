@@ -17,7 +17,7 @@ if __name__ == "__main__":
     move_distance = 1500.0
 
     # Set device
-    set_device("numpy")
+    set_device("auto")
 
     # Read input data
     src = DummyPanoramaReader(data_dir)

@@ -1,10 +1,13 @@
 import numpy as np
 from pathlib import Path
 from util.stereo_reader import StereoReader
-from dibr import make_rt, forward_mapping, inverse_mapping, show_mapping_comparison
+from dibr import make_rt, forward_mapping, inverse_mapping, show_mapping_comparison, set_device
 
 
 if __name__ == "__main__":
+    # Set device
+    set_device("auto")
+    
     dataset_dir = Path("middlebury2014")
     data_dir = dataset_dir / "Bicycle1-perfect"
 
