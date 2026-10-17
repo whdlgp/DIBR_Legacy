@@ -114,6 +114,29 @@ Animated WebP demos.
 
 </details>
 
+## Backend
+
+This project supports NumPy and Taichi backends.
+
+- **NumPy**: Default CPU implementation.
+- **Taichi**: Accelerated implementation with support for CPU and GPU backends.
+
+The backend can be selected using `set_device()`.  
+**Note:** The backend can only be selected once per process.
+
+```python
+from dibr import set_device
+
+set_device("numpy")  # NumPy backend
+set_device("cpu")    # Taichi CPU backend
+set_device("cuda")   # Taichi CUDA backend
+set_device("vulkan") # Taichi Vulkan backend
+set_device("metal")  # Taichi Metal backend
+set_device("auto")   # Automatically select an available backend
+```
+
+The `"auto"` option attempts to initialize a Taichi GPU backend and falls back to NumPy if initialization fails.
+
 ## License
 
 The source code is licensed under the MIT License.
