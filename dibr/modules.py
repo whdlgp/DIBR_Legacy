@@ -49,11 +49,11 @@ def world2pixel_forward(world_coord: np.ndarray, ref_image: np.ndarray, camera: 
 
     image = None
     if return_mode != "depth":
-        image = bl.write_image(ref_image, x, y, src_idx, height, width)
+        image = bl.render_image_forward(ref_image, x, y, src_idx, height, width)
 
     depth_map = None
     if return_mode != "image":
-        depth_map = bl.write_depth(depth, x, y, height, width)
+        depth_map = bl.render_depth_forward(depth, x, y, height, width)
 
     return image, depth_map
 
@@ -74,7 +74,7 @@ def world2pixel_inverse(world_coord: np.ndarray, ref_image: np.ndarray, camera: 
 
     idx, x, y, _ = bl.project_plane(world_coord, camera, height, width, 0)
 
-    return bl.sample_image(ref_image, x, y, idx, height, width)
+    return bl.render_image_inverse(ref_image, x, y, idx, height, width)
 
 
 def world2pixel_forward_erp(world_coord: np.ndarray, ref_image: np.ndarray, return_mode: Literal["image", "depth", "both"] = "both") -> tuple[np.ndarray | None, np.ndarray | None]:
@@ -96,11 +96,11 @@ def world2pixel_forward_erp(world_coord: np.ndarray, ref_image: np.ndarray, retu
 
     image = None
     if return_mode != "depth":
-        image = bl.write_image(ref_image, x, y, src_idx, height, width)
+        image = bl.render_image_forward(ref_image, x, y, src_idx, height, width)
 
     depth_map = None
     if return_mode != "image":
-        depth_map = bl.write_depth(depth, x, y, height, width)
+        depth_map = bl.render_depth_forward(depth, x, y, height, width)
 
     return image, depth_map
 
@@ -120,7 +120,7 @@ def world2pixel_inverse_erp(world_coord: np.ndarray, ref_image: np.ndarray) -> n
 
     idx, x, y, _ = bl.project_erp(world_coord, height, width)
 
-    return bl.sample_image(ref_image, x, y, idx, height, width)
+    return bl.render_image_inverse(ref_image, x, y, idx, height, width)
 
 
 def world2pixel_forward_erp2plane(world_coord: np.ndarray, ref_image: np.ndarray, camera: np.ndarray, camera_dst_size: tuple[int, int], return_mode: Literal["image", "depth", "both"] = "both") -> tuple[np.ndarray | None, np.ndarray | None]:
@@ -144,11 +144,11 @@ def world2pixel_forward_erp2plane(world_coord: np.ndarray, ref_image: np.ndarray
 
     image = None
     if return_mode != "depth":
-        image = bl.write_image(ref_image, x, y, src_idx, height, width)
+        image = bl.render_image_forward(ref_image, x, y, src_idx, height, width)
 
     depth_map = None
     if return_mode != "image":
-        depth_map = bl.write_depth(depth, x, y, height, width)
+        depth_map = bl.render_depth_forward(depth, x, y, height, width)
 
     return image, depth_map
 
@@ -170,4 +170,4 @@ def world2pixel_inverse_erp2plane(world_coord: np.ndarray, ref_image: np.ndarray
 
     idx, x, y, _ = bl.project_erp(world_coord, src_height, src_width)
 
-    return bl.sample_image(ref_image, x, y, idx, height, width)
+    return bl.render_image_inverse(ref_image, x, y, idx, height, width)

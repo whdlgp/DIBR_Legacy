@@ -282,7 +282,7 @@ def project_erp(world_coord: ti.Ndarray, height: int, width: int) -> tuple[ti.Nd
 
 
 @ti.kernel
-def write_image_kernel(ref_image: ti.types.ndarray(), x: ti.types.ndarray(), y: ti.types.ndarray(), src_idx: ti.types.ndarray(), image: ti.types.ndarray()):
+def render_image_forward_kernel(ref_image: ti.types.ndarray(), x: ti.types.ndarray(), y: ti.types.ndarray(), src_idx: ti.types.ndarray(), image: ti.types.ndarray()):
     src_width = ref_image.shape[1]
 
     for i in range(x.shape[0]):
@@ -291,7 +291,7 @@ def write_image_kernel(ref_image: ti.types.ndarray(), x: ti.types.ndarray(), y: 
                 image[y[i], x[i], c] = ref_image[src_idx[i] // src_width, src_idx[i] % src_width, c]
 
 
-def write_image(ref_image: np.ndarray, x: ti.Ndarray, y: ti.Ndarray, src_idx: ti.Ndarray, height: int, width: int) -> np.ndarray:
+def render_image_forward(ref_image: np.ndarray, x: ti.Ndarray, y: ti.Ndarray, src_idx: ti.Ndarray, height: int, width: int) -> np.ndarray:
     """Write src colors to dst pixels.
 
     Args:
@@ -309,19 +309,19 @@ def write_image(ref_image: np.ndarray, x: ti.Ndarray, y: ti.Ndarray, src_idx: ti
 
     image = ti.ndarray(ti_dtype(ref_image), shape=(height, width, channels))
     image.fill(0)
-    write_image_kernel(np.ascontiguousarray(ref_image), x, y, src_idx, image)
+    render_image_forward_kernel(np.ascontiguousarray(ref_image), x, y, src_idx, image)
 
     return image.to_numpy()
 
 
 @ti.kernel
-def write_depth_kernel(depth: ti.types.ndarray(), x: ti.types.ndarray(), y: ti.types.ndarray(), depth_map: ti.types.ndarray()):
+def render_depth_forward_kernel(depth: ti.types.ndarray(), x: ti.types.ndarray(), y: ti.types.ndarray(), depth_map: ti.types.ndarray()):
     for i in range(x.shape[0]):
         if x[i] >= 0:
             depth_map[y[i], x[i]] = depth[i]
 
 
-def write_depth(depth: ti.Ndarray, x: ti.Ndarray, y: ti.Ndarray, height: int, width: int) -> np.ndarray:
+def render_depth_forward(depth: ti.Ndarray, x: ti.Ndarray, y: ti.Ndarray, height: int, width: int) -> np.ndarray:
     """Write depths to dst pixels.
 
     Args:
@@ -336,13 +336,13 @@ def write_depth(depth: ti.Ndarray, x: ti.Ndarray, y: ti.Ndarray, height: int, wi
     """
     depth_map = ti.ndarray(ti.f32, shape=(height, width))
     depth_map.fill(0)
-    write_depth_kernel(depth, x, y, depth_map)
+    render_depth_forward_kernel(depth, x, y, depth_map)
 
     return depth_map.to_numpy()
 
 
 @ti.kernel
-def sample_image_kernel(ref_image: ti.types.ndarray(), x: ti.types.ndarray(), y: ti.types.ndarray(), idx: ti.types.ndarray(), image: ti.types.ndarray()):
+def render_image_inverse_kernel(ref_image: ti.types.ndarray(), x: ti.types.ndarray(), y: ti.types.ndarray(), idx: ti.types.ndarray(), image: ti.types.ndarray()):
     width = image.shape[1]
 
     for i in range(x.shape[0]):
@@ -351,7 +351,7 @@ def sample_image_kernel(ref_image: ti.types.ndarray(), x: ti.types.ndarray(), y:
                 image[idx[i] // width, idx[i] % width, c] = ref_image[y[i], x[i], c]
 
 
-def sample_image(ref_image: np.ndarray, x: ti.Ndarray, y: ti.Ndarray, idx: ti.Ndarray, height: int, width: int) -> np.ndarray:
+def render_image_inverse(ref_image: np.ndarray, x: ti.Ndarray, y: ti.Ndarray, idx: ti.Ndarray, height: int, width: int) -> np.ndarray:
     """Sample src colors at (x, y) and write them to dst pixels.
 
     Args:
@@ -369,7 +369,7 @@ def sample_image(ref_image: np.ndarray, x: ti.Ndarray, y: ti.Ndarray, idx: ti.Nd
 
     image = ti.ndarray(ti_dtype(ref_image), shape=(height, width, channels))
     image.fill(0)
-    sample_image_kernel(np.ascontiguousarray(ref_image), x, y, idx, image)
+    render_image_inverse_kernel(np.ascontiguousarray(ref_image), x, y, idx, image)
 
     return image.to_numpy()
 

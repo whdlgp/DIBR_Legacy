@@ -147,7 +147,7 @@ def project_erp(world_coord: np.ndarray, height: int, width: int) -> tuple[np.nd
     return valid_idx, x, y, radius
 
 
-def write_image(ref_image: np.ndarray, x: np.ndarray, y: np.ndarray, src_idx: np.ndarray, height: int, width: int) -> np.ndarray:
+def render_image_forward(ref_image: np.ndarray, x: np.ndarray, y: np.ndarray, src_idx: np.ndarray, height: int, width: int) -> np.ndarray:
     """Write src colors to dst pixels.
 
     Args:
@@ -169,7 +169,7 @@ def write_image(ref_image: np.ndarray, x: np.ndarray, y: np.ndarray, src_idx: np
     return image
 
 
-def write_depth(depth: np.ndarray, x: np.ndarray, y: np.ndarray, height: int, width: int) -> np.ndarray:
+def render_depth_forward(depth: np.ndarray, x: np.ndarray, y: np.ndarray, height: int, width: int) -> np.ndarray:
     """Write depths to dst pixels.
 
     Args:
@@ -188,7 +188,7 @@ def write_depth(depth: np.ndarray, x: np.ndarray, y: np.ndarray, height: int, wi
     return depth_map
 
 
-def sample_image(ref_image: np.ndarray, x: np.ndarray, y: np.ndarray, idx: np.ndarray, height: int, width: int) -> np.ndarray:
+def render_image_inverse(ref_image: np.ndarray, x: np.ndarray, y: np.ndarray, idx: np.ndarray, height: int, width: int) -> np.ndarray:
     """Sample src colors at (x, y) and write them to dst pixels.
 
     Args:
